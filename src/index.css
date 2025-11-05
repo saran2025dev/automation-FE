@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss"; */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -71,4 +71,54 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Custom Toastify Style */
+.Toastify__toast {
+  /* border-radius: px !important; */
+  background: #f9f9f9 !important;
+  color: #242424 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px);
+  font-size: 1rem !important;
+  padding: 10px 14px !important;
+  margin-right: 15px !important;
+  width: 275px !important;
+  min-height: 45px !important;
+}
+
+/* Success toast */
+.Toastify__toast--success {
+  border-left: 3px solid #07bc0c !important;
+  border-bottom: 3px solid #07bc0c !important;
+}
+
+/* Error toast */
+.Toastify__toast--error {
+  border-left: 3px solid #ff4b5c !important;
+  border-bottom: 3px solid #ff4b5c !important;
+}
+
+/* Info toast */
+.Toastify__toast--info {
+  border-left: 3px solid #00b4d8 !important;
+  border-bottom: 3px solid #00b4d8 !important;
+}
+
+/* Warning toast */
+.Toastify__toast--warning {
+  border-left: 3px solid #ffb703 !important;
+  border-bottom: 3px solid #ffb703 !important;
+}
+
+/* Example: change success icon color */
+.Toastify__toast--success .Toastify__toast-icon svg {
+  stroke: #07bc0c; /* outline color */
+  stroke-width: 2; /* thicker line */
+}
+
+/* change error icon color */
+.Toastify__toast--error .Toastify__toast-icon svg {
+  stroke: #ef4444; /* outline color */
+  stroke-width: 2; /* thicker line */
 }

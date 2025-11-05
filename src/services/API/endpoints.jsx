@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://localhost:3001';
+export const BASE_URL = "http://localhost:3001";
 
 export const ENDPOINTS = {
   AUTH: {
@@ -6,6 +6,8 @@ export const ENDPOINTS = {
   },
   PROJECT: {
     GET_ALL: (userId, roleName)=> `${BASE_URL}/project/${userId}/role/${roleName}`,
+    GET_BY_USER: (userId) => `${BASE_URL}/project/project/${userId}`,
+    GET_BY_ASSIGNED_USER: () => `${BASE_URL}/user-projects`,
     CREATE: `${BASE_URL}/project`,
   },
   SUITE: {

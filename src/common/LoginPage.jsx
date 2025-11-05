@@ -3,6 +3,7 @@ import { useLoginMutation } from '../services/queries/useLoginQuery';
 import { useNavigate } from 'react-router-dom';
 import { BsShieldFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
+import { encrypt } from '../hooks/crypt';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,8 +14,9 @@ export default function LoginPage() {
   const loginMutation = useLoginMutation(
     (data) => {
       toast.success(data.message);
-      localStorage.setItem("User", JSON.stringify(data?.user));
+      encrypt("User", data?.user);
       navigate('/home');
+      window.location.reload();
     },
     (err) => {
       setError(err?.response?.data?.message || 'Login failed');
@@ -58,7 +60,7 @@ export default function LoginPage() {
               <label className="block text-md font-medium text-gray-600">Email</label>
               <input
                 type="email"
-                className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full bg-white rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -69,7 +71,7 @@ export default function LoginPage() {
               <label className="block text-md font-medium text-gray-600">Password</label>
               <input
                 type="password"
-                className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full bg-white rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

@@ -1,9 +1,10 @@
 import React from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { FiLogOut, FiUser, FiMenu } from "react-icons/fi";
+import { decrypt } from "../../hooks/crypt";
 
 export default function Header() {
-  const user = JSON.parse(localStorage.getItem("User"));
+  const user = decrypt("User");
   const firstLetter = user?.username?.charAt(0)?.toUpperCase();
 
   return (

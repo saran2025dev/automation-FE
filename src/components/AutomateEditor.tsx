@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect, ChangeEvent } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { fetchMethods, sendAutomationData, saveScript, updateScript, loadScript } from '../services/automateService';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { CircleCheck, CircleAlert } from 'lucide-react';
 
 export type Action = {
   id: string;
@@ -11,8 +12,6 @@ export type Action = {
   url?: string;
   selector?: string;
   value?: string | number;
-  enableDynamicValue: boolean;
-  dynamicValue: boolean;
   timeout?: number;
 };
 
@@ -21,8 +20,6 @@ const BLANK_ACTION: Omit<Action, 'id'> = {
   url: '',
   selector: '',
   value: '',
-  enableDynamicValue: false,
-  dynamicValue: true,
   timeout: 30000,
 };
 
@@ -37,27 +34,47 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
   const [methods, setMethods] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [dirty, setDirty] = useState(false);
-
-  /* Load methods & existing script */
+  const [scriptInput, setScriptInput] = useState("");
+  const [url, setUrl]= useState("");
+  
   useEffect(() => {
-    fetchMethods().then(setMethods);
-    if (scriptId) {
-      loadScript(scriptId).then((s) => {
-        setTitle(s.title);
-        setActions(s.actions);
-      });
-    } else {
-      // preload draft
-      const draft = localStorage.getItem('draft-script');
-      if (draft) {
-        const json = JSON.parse(draft);
-        setTitle(json.title ?? '');
-        setActions(json.actions ?? []);
-      }
+  setActions((prev) => {
+    if (!prev.length) {
+      return [{ id: uuid(), method: 'gotoPage', url, timeout: 30000 }];
     }
-  }, [scriptId]);
+    const clone = [...prev];
+    clone[0] = { ...clone[0], url };
+    return clone;
+  });
+}, [url]);
 
-  // autosave draft when no scriptId yet
+
+useEffect(() => {
+  fetchMethods().then(setMethods);
+
+  if (scriptId) {
+    loadScript(scriptId).then((s) => {
+      setTitle(s.title);
+      setActions(s.actions && s.actions.length > 0 ? s.actions : [{ id: uuid(), method: 'gotoPage', url: '', timeout: 30000 }]
+      );
+    });
+  } else {
+    const draft = localStorage.getItem('draft-script');
+    if (draft) {
+      const json = JSON.parse(draft);
+      setTitle(json.title ?? '');
+      if (Array.isArray(json.actions) && json.actions.length > 0) {
+        setActions(json.actions);
+      } else {
+        setActions([{ id: uuid(), method: 'gotoPage', url: '', timeout: 30000 }]);
+      }
+    } else {
+      setActions([{ id: uuid(), method: 'gotoPage', url: '', timeout: 30000 }]);
+    }
+  }
+}, [scriptId]);
+
+
   useAutoSave('draft-script', { title, actions });
 
   const addAction = useCallback((idx?: number) => {
@@ -91,8 +108,7 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
   }, []);
 
   const cleaned = useMemo(() =>
-    actions.map(({ id, enableDynamicValue, ...rest }) => {
-      if (!enableDynamicValue) rest.dynamicValue = false;
+    actions.map(({ id, ...rest }) => {
       Object.entries(rest).forEach(([k, v]) => {
         if (v === '' || v === null || v === undefined) delete (rest as any)[k];
       });
@@ -101,15 +117,14 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
     [actions]);
 
   const save = async () => {
-    if (!title.trim()) return toast.error('Title is required');
+    if (!title.trim()) return toast.error("Title is required!",{icon: <CircleAlert/>});
     if (scriptId) {
       await updateScript(scriptId, { title, actions });
       setDirty(false);
-      toast.success('Script updated');
+      toast.success("Script updated",{icon: <CircleCheck/>})
     } else {
       const { id } = await saveScript({ title, actions });
-      toast.success('Script saved');
-      // you may want to navigate to /edit/:id here
+      toast.success("Script saved",{icon: <CircleCheck/>})
     }
   };
 
@@ -117,9 +132,9 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
     setSubmitting(true);
     try {
       await sendAutomationData(cleaned);
-      toast.success('Run started');
+      toast.success("Run started",{icon: <CircleCheck/>})
     } catch (e: any) {
-      toast.error(`Run error: ${e.message}`);
+      toast.error(`Run error: ${e.message}`,{icon: <CircleAlert/>})
     } finally {
       setSubmitting(false);
     }
@@ -136,12 +151,41 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
     setDirty(true);
   };
 
-  /* JSX */
+  const loadScriptActions = () => {
+    try{
+      const parsed = JSON.parse(scriptInput);
+      console.log(parsed);
+      const scriptWithIds = parsed.map((a) => ({
+        id: uuid(),
+        timeout: 30000,
+        ...a,
+      }));
+      setActions(scriptWithIds);
+      setDirty(true);
+      toast.success("Actions loaded into editor",{icon: <CircleCheck/>})
+    }catch(err){
+      toast.error("Invalid action script",{icon: <CircleAlert/>})
+    }
+  };
+  
+  const urlChange = (e)=>{
+    setUrl(e.target.value);
+  }
+
   return (
     <div className="w-100 d-flex flex-column bg-gradient bg-body-tertiary">
-      <ToastContainer position="bottom-right" />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={2000}
+        closeButton={false}
+        hideProgressBar
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover
+      />
 
-      {/* Header */}
       <header className="py-3 px-4 border-bottom flex-shrink-0">
         <div className="d-flex align-items-end justify-content-between">
           <div style={{ width: '60%' }}>
@@ -149,13 +193,32 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
             <input className="form-control" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div>
+            {/* toggle for active inactive */}
             <button className="btn btn-outline-secondary me-2" onClick={save} disabled={!dirty}>💾 Save</button>
             <button className="btn btn-success" onClick={run} disabled={submitting}>{submitting ? 'Running…' : '▶ Run'}</button>
           </div>
         </div>
       </header>
 
-      {/* Main list */}
+      <div className="px-4 py-3 border-b">
+        <label className="form-label fw-semibold">Load Actions from Script</label>
+        <textarea
+          className="form-control mb-2"
+          rows={5}
+          placeholder="Paste your action script here..."
+          value={scriptInput}
+          onChange={(e) => setScriptInput(e.target.value)}
+        />
+        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" onClick={loadScriptActions}>
+          Load into Editor
+        </button>
+      </div>
+      
+      <div className='px-4 py-3'>
+        <label className="form-label fw-semibold mb-1">URL</label>
+        <input className="form-control" onChange={(e)=>urlChange(e)} />
+      </div>
+
       <main className="flex-grow-1 overflow-auto px-4 py-3">
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="actions">
@@ -168,13 +231,12 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
                         <div className="card-header d-flex justify-content-between align-items-center" {...prov.dragHandleProps}>
                           <span>Step {idx + 1}</span>
                           <div>
-                            <button className="btn btn-sm btn-light me-1" title="Clone" onClick={() => cloneAction(idx)}>⧉</button>
-                            <button className="btn btn-sm btn-light me-1" title="Insert below" onClick={() => addAction(idx + 1)}>＋</button>
-                            <button className="btn btn-sm btn-outline-danger" title="Remove" onClick={() => removeAction(idx)}>✕</button>
+                            <button className="btn btn-sm btn-light me-1" onClick={() => cloneAction(idx)}>⧉</button>
+                            <button className="btn btn-sm btn-light me-1" onClick={() => addAction(idx + 1)}>＋</button>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => removeAction(idx)}>✕</button>
                           </div>
                         </div>
                         <div className="card-body">
-                          {/* Method */}
                           <div className="mb-2">
                             <label className="form-label">Method</label>
                             <select className="form-select" value={a.method} onChange={(e) => updateField(idx, 'method', e.target.value)}>
@@ -198,26 +260,12 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
                           {a.method === 'explicitWait' && (
                             <InputField type="number" label="Wait (ms)" value={String(a.value ?? '')} onChange={(v) => updateField(idx, 'value', Number(v))} />
                           )}
-
-                          {/* Dynamic toggle */}
-                          <div className="form-check form-switch mb-2">
-                            <input className="form-check-input" type="checkbox" checked={a.enableDynamicValue} onChange={(e) => updateField(idx, 'enableDynamicValue', e.target.checked)} />
-                            <label className="form-check-label">Enable Dynamic Value</label>
-                          </div>
-
-                          {a.enableDynamicValue && (
-                            <select className="form-select mb-2" value={a.dynamicValue.toString()} onChange={(e) => updateField(idx, 'dynamicValue', e.target.value === 'true')}>
-                              <option value="true">True</option>
-                              <option value="false">False</option>
-                            </select>
-                          )}
                         </div>
                       </div>
                     )}
                   </Draggable>
                 ))}
                 {prov.placeholder}
-                {/* add‑action button at end */}
                 <button className="btn btn-primary w-100" onClick={() => addAction()}>＋ Add Step</button>
               </div>
             )}
@@ -225,13 +273,11 @@ const AutomateEditor: React.FC<Props> = ({ scriptId }) => {
         </DragDropContext>
       </main>
 
-      {/* Dev preview */}
       <pre className="m-0 p-3 bg-dark text-white small" style={{ maxHeight: 200, overflowY: 'auto' }}>{JSON.stringify(cleaned, null, 2)}</pre>
     </div>
   );
 };
 
-/* Helper input component */
 interface FieldProps { label: string; value: any; onChange: (v: string) => void; type?: string; placeholder?: string; }
 const InputField: React.FC<FieldProps> = ({ label, value, onChange, type = 'text', placeholder }) => (
   <div className="mb-2">

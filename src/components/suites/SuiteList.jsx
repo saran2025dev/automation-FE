@@ -37,7 +37,7 @@ export default function SuiteList({ selectedProjectId, suites }) {
           <input
             type="text"
             placeholder="Suite Name"
-            className="border p-3 rounded-lg w-full"
+            className="border p-3 rounded-lg bg-white w-full"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
@@ -45,21 +45,13 @@ export default function SuiteList({ selectedProjectId, suites }) {
           <input
             type="text"
             placeholder="Description"
-            className="border p-3 rounded-lg w-full"
+            className="border p-3 rounded-lg bg-white w-full"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             required
           />
         </div>
         <div className="flex items-center gap-4 mt-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-            />
-            <span className="text-sm">Active</span>
-          </label>
           <button
             type="submit"
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"

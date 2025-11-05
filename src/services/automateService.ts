@@ -17,6 +17,7 @@ export const sendAutomationData = async (actions: ActionPayload[]): Promise<void
 /* Save a new script */
 export async function saveScript(data: { title: string; actions: ActionPayload[] }) {
   const response = await axios.post(`${BASE_URL}`, data);
+  console.log(response.data)
   return response.data; // { id }
 }
 
